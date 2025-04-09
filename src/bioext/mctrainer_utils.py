@@ -21,6 +21,13 @@ class MCTObj(ABC):
 
 @dataclass
 class MCTDataset(MCTObj):
+    """A dataset in the MedCATTrainer instance.
+
+    Attributes:
+        name (str): The name of the dataset.
+        dataset_file (str): The path to the dataset file, can be a csv, or excel file, with at 
+            least 2 columns: 'name': unique identifier for each text, and 'text': the text to be annotated.
+    """
     name: str=None
     dataset_file: str=None
 
@@ -30,8 +37,16 @@ class MCTDataset(MCTObj):
 
 @dataclass
 class MCTConceptDB(MCTObj):
+    """A concept database in the MedCATTrainer instance.
+
+    Attributes:
+        name (str): The name of the concept database. Name must start with a lowercase letter and contain only alphanumeric characters and underscores.
+        conceptdb_file (str): The path to the concept database file, should be a <conceptdb_name>.dat file.
+        use_for_training (bool): Whether to use the concept database for training. Defaults to True as most uploaded CDBs will be used for training, unless they are used for the concept search lookup.
+    """
     name: str=None
-    conceptdb_file: str=None   
+    conceptdb_file: str=None
+    use_for_training: bool=True
 
     def __post_init__(self):
         if self.name is not None:
@@ -46,6 +61,12 @@ class MCTConceptDB(MCTObj):
 
 @dataclass
 class MCTVocab(MCTObj):
+    """A vocabulary in the MedCATTrainer instance.
+
+    Attributes:
+        name (str): The name of the vocabulary.
+        vocab_file (str): The path to the vocabulary file, should be a <vocab_name>.dat file.
+    """
     name: str=None
     vocab_file: str=None
 
@@ -55,6 +76,12 @@ class MCTVocab(MCTObj):
 
 @dataclass
 class MCTModelPack(MCTObj):
+    """A model pack in the MedCATTrainer instance.
+
+    Attributes:
+        name (str): The name of the model pack.
+        model_pack_zip (str): The path to the model pack zip file, should be a <modelpack_name>.zip file.
+    """
     name: str=None
     model_pack_zip: str=None
 
@@ -64,6 +91,11 @@ class MCTModelPack(MCTObj):
 
 @dataclass
 class MCTMetaTask(MCTObj):
+    """A meta task in the MedCATTrainer instance.
+
+    Attributes:
+        name (str): The name of the meta task.
+    """
     name: str=None
     
     def __str__(self):
@@ -72,6 +104,11 @@ class MCTMetaTask(MCTObj):
 
 @dataclass
 class MCTRelTask(MCTObj):
+    """A relation extraction task in the MedCATTrainer instance.
+
+    Attributes:
+        name (str): The name of the relation extraction task.
+    """
     name: str=None
 
     def __str__(self):
@@ -80,6 +117,11 @@ class MCTRelTask(MCTObj):
 
 @dataclass
 class MCTUser(MCTObj):
+    """A user in the MedCATTrainer instance.
+
+    Attributes:
+        username (str): The username of the user.   
+    """
     username: str=None
 
     def __str__(self):
@@ -88,6 +130,19 @@ class MCTUser(MCTObj):
 
 @dataclass
 class MCTProject(MCTObj):
+    """A project in the MedCATTrainer instance.
+
+    Attributes:
+        name (str): The name of the project.
+        description (str): The description of the project.
+        cuis (str): The CUIs to be used in the project filter.
+        dataset (MCTDataset): The dataset to be used in the project.
+        concept_db (MCTConceptDB): The concept database to be used in the project.
+        vocab (MCTVocab): The vocabulary to be used in the project.
+        members (List[MCTUser]): The annotators for the project.
+        meta_tasks (List[MCTMetaTask]): The meta tasks for the project.
+        rel_tasks (List[MCTRelTask]): The relation extraction tasks for the project.
+    """
     name: str=None
     description: str=None
     cuis: str=None
@@ -470,6 +525,8 @@ class MedCATTrainerSession:
                                        headers=self.headers).text)
         return resp
 
+    def __str__(self) -> str:
+        return f'{self.server} \t {self.username} \t {self.password}'
 
 
 class MCTUtilsException(Exception):
@@ -481,44 +538,4 @@ class MCTUtilsException(Exception):
     
     def __str__(self):
         return f'{self.message} \n {self.original_exception}'
-
-
-if __name__ == '__main__':
-    import os
-    os.environ['MCTRAINER_USERNAME'] = 'admin'
-    os.environ['MCTRAINER_PASSWORD'] = 'admin'
-
-    session = MedCATTrainerSession()
-
-    # get tests
-    users = session.get_users()
-    model_packs = session.get_model_packs()
-    cdbs, vocabs = session.get_models() 
-    meta_tasks = session.get_meta_tasks()
-    datasets = session.get_datasets()
-    projects = session.get_projects()
-
-    # create tests
-    # ds = session.create_dataset(name='Test DS', dataset_file='/Users/tom/phd/MedCATtrainer/notebook_docs/example_data/cardio.csv')
-    cdb_file = '<model_pack_path>/cdb.dat'
-    vocab_file = '<model_pack_path>/vocab.dat'
-    model_pack_zip = '<model_pack_path>.zip'
-    cdb, vocab = session.create_medcat_model(MCTConceptDB(name='test_cdb', conceptdb_file=cdb_file), 
-                                             MCTVocab(name='test_vocab', vocab_file=vocab_file))
-    session.create_medcat_model_pack(MCTModelPack(name='test_model_pack', model_pack_zip=model_pack_zip))
-    
-    cdb = cdbs[0]
-    vocab = vocabs[0]
-    cuis_file = '<cuis.json>' # path to a JSON formatted Array of strings for a cui filter e.g. ['C0000001', 'C0000002', 'C0000003' ... ]
-    # with client wrapper objects
-    # p = session.create_project(name='test-upload', description='test-upload', cuis=['C0000001'], members=[users[0]], dataset=datasets[0], concept_db=cdb, vocab=vocab, cdb_search_filter=cdb)
-    
-    # # directly with just names
-    # p = session.create_project(name='test-upload-4', description='test-upload-2', cuis=['C0000001'], cuis_file=cuis_file, members=['admin'], 
-    #                            dataset='Test DS', concept_db='test_cdb', vocab='test_vocab', cdb_search_filter=cdb, meta_tasks=['Subject', 'Status', 'Time'],
-    #                            rel_tasks=['Spatial'])
-    
-    # get the latest created project from the latest created project
-    projects = session.get_projects()
-    annos = session.get_project_annos([projects[-1]])
     
