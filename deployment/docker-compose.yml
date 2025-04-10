@@ -115,40 +115,24 @@ services:
     restart: unless-stopped
   
   medcattrainer:
-    image: cogstacksystems/medcat-trainer:v2.18.1
+    image: cogstacksystems/medcat-trainer:v2.22.0
     container_name: bioextmedcattrainer
     networks:
       - bioext_network    
     volumes:
-      - ./medcattrainer/configs:/home/configs
       - mct-api-media:/home/api/media
       - mct-api-static:/home/api/static
       - mct-api-db:/home/api/db
+      - ./medcattrainer/configs:/home/configs
+      - ./medcattrainer/supervisord.conf:/etc/supervisord.conf
     env_file:
       - ./.env.example
     environment:
-      - MCT_VERSION=v2.18.1
-    # ports:
-    #   - "${MCTRAINER_PORT:-8001}:8000"
-    command: /home/scripts/run.sh
+      - MCT_VERSION=v2.22.0
+    command: /usr/bin/supervisord -c /etc/supervisord.conf
     depends_on:
-      - medcattrainer-bg-process
       - medcattrainer_solr
       - medcattrainer_nginx
-    restart: unless-stopped
-  
-  medcattrainer-bg-process:
-    image: cogstacksystems/medcat-trainer:v2.18.1
-    networks:
-      - bioext_network 
-    volumes:
-      - ./medcattrainer/configs:/home/configs
-      - mct-api-media:/home/api/media
-      - mct-api-static:/home/api/static
-      - mct-api-db:/home/api/db
-    env_file:
-      - ./.env.example
-    command: /home/scripts/run-bg-process.sh
     restart: unless-stopped
   
   medcattrainer_nginx:
@@ -177,8 +161,6 @@ services:
       - ./.env.example
     expose:
       - "8983"
-    # ports:
-    #   - "${CONCEPT_SEARCH_SERVICE_PORT:-8983}:8983"
     volumes:
       - mct-solr-data:/var/solr
     command:
