@@ -115,7 +115,7 @@ services:
     restart: unless-stopped
   
   medcattrainer:
-    image: cogstacksystems/medcat-trainer:v2.22.0
+    image: cogstacksystems/medcat-trainer:v2.22.1
     container_name: bioextmedcattrainer
     networks:
       - bioext_network    
@@ -128,7 +128,7 @@ services:
     env_file:
       - ./.env.example
     environment:
-      - MCT_VERSION=v2.22.0
+      - MCT_VERSION=v2.22.1
     command: /usr/bin/supervisord -c /etc/supervisord.conf
     depends_on:
       - medcattrainer_solr
