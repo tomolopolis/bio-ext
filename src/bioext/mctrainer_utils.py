@@ -52,7 +52,7 @@ class MCTConceptDB(MCTObj):
         if self.name is not None:
             if not self.name[0].islower():
                 raise ValueError("Name must start with a lowercase letter")
-            if not self.name.replace('_', '').isalnum():
+            if not self.name.replace('_', '').replace('-', '').isalnum():
                 raise ValueError("Name must contain only alphanumeric characters and underscores")
 
     def __str__(self):
@@ -317,14 +317,20 @@ class MedCATTrainerSession:
             'description': description,
             'cuis': ','.join(cuis),
             'dataset': dataset.id,
-            'concept_db': concept_db.id,
-            'vocab': vocab.id,
             'members': [m.id for m in members],
             'tasks': [mt.id for mt in meta_tasks],
             'relations': [rt.id for rt in rel_tasks]
         }
+
+        if concept_db and vocab:
+            payload['concept_db'] = concept_db.id
+            payload['vocab'] = vocab.id
+        elif modelpack:
+            payload['model_pack'] = modelpack.id
+
         if cdb_search_filter:
             payload['cdb_search_filter'] = [cdb_search_filter.id]
+
         if cuis_file:
             with open(cuis_file, 'rb') as f:
                 resp = requests.post(f'{self.server}/api/project-annotate-entities/', data=payload, files={'cuis_file': f}, headers=self.headers)
